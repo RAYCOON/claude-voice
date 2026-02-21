@@ -1,0 +1,15 @@
+{
+  "_comment": "Diese Datei nicht bearbeiten — eigene Werte in config.json setzen",
+
+  "speed": 1.0,
+  "_speed_comment": "Sprechgeschwindigkeit: 0.5 (sehr schnell) bis 2.0 (sehr langsam), Standard: 1.0",
+
+  "volume": 1.0,
+  "_volume_comment": "Lautstärke: 0.1 (sehr leise) bis 2.0 (sehr laut), Standard: 1.0",
+
+  "model": "de_DE-thorsten-high",
+  "_model_comment": "Piper-Modellname (ohne .onnx), Datei muss in models/ liegen",
+
+  "paragraph": "last",
+  "_paragraph_comment": "Welcher Absatz vorgelesen wird: 'last' (letzter) oder 'all' (gesamte Antwort)"
+}

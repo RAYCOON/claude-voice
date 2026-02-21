@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Claude Voice - Uninstaller
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCAL_SETTINGS="$(pwd)/.claude/settings.local.json"
+GLOBAL_SETTINGS="$HOME/.claude/settings.json"
+
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+ok()   { echo -e "${GREEN}✓${NC} $*"; }
+warn() { echo -e "${YELLOW}!${NC} $*"; }
+
+echo ""
+echo -e "${BOLD}Claude Voice Uninstaller${NC}"
+echo "========================"
+echo ""
+
+# 1. Erkennen wo der Hook installiert ist
+HAS_LOCAL=false
+HAS_GLOBAL=false
+
+jq -e '.hooks.Stop' "$LOCAL_SETTINGS"  &>/dev/null 2>&1 && HAS_LOCAL=true  || true
+jq -e '.hooks.Stop' "$GLOBAL_SETTINGS" &>/dev/null 2>&1 && HAS_GLOBAL=true || true
+
+echo -e "${BOLD}Erkannte Installationen:${NC}"
+if [ "$HAS_LOCAL" = "true" ];  then echo -e "  ${GREEN}✓${NC} Lokal:  $LOCAL_SETTINGS"; fi
+if [ "$HAS_GLOBAL" = "true" ]; then echo -e "  ${GREEN}✓${NC} Global: $GLOBAL_SETTINGS"; fi
+if [ "$HAS_LOCAL" = "false" ] && [ "$HAS_GLOBAL" = "false" ]; then
+  warn "Kein aktiver Hook gefunden."
+fi
+echo ""
+
+# 2. Auswahl welche Installation entfernen
+echo -e "${BOLD}Was soll entfernt werden?${NC}"
+echo ""
+echo "  [1] Lokal  — $(basename "$(pwd)") ($LOCAL_SETTINGS)"
+echo "  [2] Global — alle Projekte ($GLOBAL_SETTINGS)"
+echo "  [3] Beide"
+echo ""
+
+# Vorauswahl basierend auf erkannter Installation
+DEFAULT="1"
+if [ "$HAS_GLOBAL" = "true" ] && [ "$HAS_LOCAL" = "false" ]; then DEFAULT="2"; fi
+if [ "$HAS_GLOBAL" = "true" ] && [ "$HAS_LOCAL" = "true" ];  then DEFAULT="3"; fi
+
+read -rp "Auswahl [1/2/3] (Standard: $DEFAULT): " CHOICE
+CHOICE="${CHOICE:-$DEFAULT}"
+
+remove_hook() {
+  local file="$1"
+  if [ ! -f "$file" ]; then
+    warn "Datei nicht vorhanden: $file"
+    return
+  fi
+  if ! jq -e '.hooks.Stop' "$file" &>/dev/null; then
+    warn "Kein Stop-Hook gefunden in: $file"
+    return
+  fi
+  UPDATED=$(jq 'del(.hooks.Stop) | if .hooks == {} then del(.hooks) else . end' "$file")
+  echo "$UPDATED" > "$file"
+  ok "Hook entfernt aus: $file"
+}
+
+case "$CHOICE" in
+  1) remove_hook "$LOCAL_SETTINGS" ;;
+  2) remove_hook "$GLOBAL_SETTINGS" ;;
+  3) remove_hook "$LOCAL_SETTINGS"; remove_hook "$GLOBAL_SETTINGS" ;;
+  *) warn "Ungültige Auswahl — nichts geändert"; exit 1 ;;
+esac
+
+echo ""
+
+# 3. Prerequisites entfernen?
+echo -e "${BOLD}Prerequisites entfernen?${NC}"
+echo ""
+
+# piper-tts
+if python3 -c "import piper" &>/dev/null 2>&1; then
+  read -rp "  piper-tts deinstallieren? [j/N]: " RM_PIPER
+  if [[ "$(echo "$RM_PIPER" | tr '[:upper:]' '[:lower:]')" == "j" ]]; then
+    pip3 uninstall -y piper-tts && ok "piper-tts deinstalliert" || warn "piper-tts Deinstallation fehlgeschlagen"
+  else
+    warn "piper-tts behalten"
+  fi
+else
+  warn "piper-tts nicht installiert — übersprungen"
+fi
+
+# Modelle
+if [ -d "$SCRIPT_DIR/models" ] && [ -n "$(ls -A "$SCRIPT_DIR/models" 2>/dev/null)" ]; then
+  MODELS_SIZE=$(du -sh "$SCRIPT_DIR/models" 2>/dev/null | cut -f1)
+  read -rp "  Modelle entfernen ($MODELS_SIZE)? [j/N]: " RM_MODELS
+  if [[ "$(echo "$RM_MODELS" | tr '[:upper:]' '[:lower:]')" == "j" ]]; then
+    rm -rf "$SCRIPT_DIR/models"
+    ok "Modelle entfernt"
+  else
+    warn "Modelle behalten"
+  fi
+fi
+
+# 4. Temp-Dateien aufräumen
+echo ""
+rm -f /tmp/claude-voice-latest.wav && ok "Temp-WAV entfernt" || true
+rm -f "$SCRIPT_DIR/speak.log"      && ok "Log entfernt"      || true
+pkill -x afplay 2>/dev/null        && ok "Wiedergabe gestoppt" || true
+
+echo ""
+echo -e "${GREEN}Deinstallation abgeschlossen.${NC}"
+echo "  Claude Code neu starten damit die Änderung wirksam wird."
+echo ""

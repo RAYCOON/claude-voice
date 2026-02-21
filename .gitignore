@@ -1,0 +1,12 @@
+# Modelle (109 MB, werden vom Installer heruntergeladen)
+models/*.onnx
+
+# Laufzeit
+speak.log
+*.log.tmp
+
+# User-Config (wird vom Installer aus config.defaults.json erzeugt)
+config.json
+
+# Claude Code lokale Settings
+.claude/settings.local.json
