@@ -87,6 +87,7 @@ fi
 # Projektname aus Hook-JSON (cwd-Feld zuverlässiger als $PWD)
 PROJECT_NAME=$(echo "$INPUT" | jq -r '.cwd // ""' | xargs basename)
 FINAL_TEXT="Neues von Projekt ${PROJECT_NAME}. ${CLEAN_TEXT}"
+# echo "$(date): PROJECT=${PROJECT_NAME}" >> "$LOG"
 
 # Session-isolierte Dateipfade
 WAVFILE="/tmp/claude-voice-${SESSION_ID}.wav"
