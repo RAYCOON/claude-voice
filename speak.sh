@@ -30,9 +30,23 @@ tail -100 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
 # Session-ID für Isolation paralleler Sessions
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "default"')
 
+# cwd→Session-ID Mapping für /read-msg persistieren
+CWD=$(echo "$INPUT" | jq -r '.cwd // ""')
+if [ -n "$CWD" ]; then
+  echo "$SESSION_ID" > "/tmp/claude-voice-cwd-$(echo -n "$CWD" | md5 -q)"
+fi
+
 # Endlosschleifen verhindern
 HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
 if [ "$HOOK_ACTIVE" = "true" ]; then
+  exit 0
+fi
+
+# Session-spezifischen Skip-Marker prüfen (gesetzt von replay.sh)
+SKIP_MARKER="/tmp/claude-voice-${SESSION_ID}-skip"
+if [ -f "$SKIP_MARKER" ]; then
+  rm -f "$SKIP_MARKER"
+  echo "$(date): Skipped (replay marker)" >> "$LOG"
   exit 0
 fi
 
@@ -48,6 +62,9 @@ MESSAGE=$(echo "$INPUT" | jq -r '.last_assistant_message // ""')
 if [ -z "$MESSAGE" ]; then
   exit 0
 fi
+
+# Volle Nachricht für /read-msg persistieren
+echo "$MESSAGE" > "/tmp/claude-voice-${SESSION_ID}-lastmsg.txt"
 
 # Absatz(e) extrahieren
 if [ "$PARAGRAPH" = "all" ]; then
@@ -68,7 +85,7 @@ fi
 # Markdown bereinigen (macOS sed mit -E für extended regex)
 CLEAN_TEXT=$(echo "$SPEAK_TEXT" \
   | sed -E 's/```[^`]*```//g' \
-  | sed -E 's/`[^`]*`//g' \
+  | sed -E 's/`([^`]*)`/\1/g' \
   | sed -E 's/\*\*([^*]*)\*\*/\1/g' \
   | sed -E 's/\*([^*]*)\*/\1/g' \
   | sed -E 's/^#{1,6}[[:space:]]*//' \

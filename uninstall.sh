@@ -105,9 +105,14 @@ fi
 
 # 4. Temp-Dateien aufräumen
 echo ""
-rm -f /tmp/claude-voice-latest.wav && ok "Temp-WAV entfernt" || true
-rm -f "$SCRIPT_DIR/speak.log"      && ok "Log entfernt"      || true
-pkill -x afplay 2>/dev/null        && ok "Wiedergabe gestoppt" || true
+rm -f /tmp/claude-voice-*.wav /tmp/claude-voice-*-lastmsg.txt /tmp/claude-voice-*-skip /tmp/claude-voice-*.pid /tmp/claude-voice-cwd-*
+ok "Temp-Dateien entfernt"
+rm -f "$SCRIPT_DIR/speak.log" && ok "Log entfernt" || true
+pkill -x afplay 2>/dev/null && ok "Wiedergabe gestoppt" || true
+
+echo ""
+warn "Hinweis: Der globale Command ~/.claude/commands/read-msg.md wurde nicht entfernt."
+warn "         Manuell löschen falls nicht mehr benötigt."
 
 echo ""
 echo -e "${GREEN}Deinstallation abgeschlossen.${NC}"

@@ -116,8 +116,9 @@ if [ -z "$PIPER_BIN" ]; then
 fi
 ok "piper Binary: $PIPER_BIN"
 
-# piper-Pfad in speak.sh eintragen
+# piper-Pfad in speak.sh und replay.sh eintragen
 sed -i '' "s|PIPER=.*|PIPER=\"$PIPER_BIN\"|" "$SCRIPT_DIR/speak.sh"
+sed -i '' "s|PIPER=.*|PIPER=\"$PIPER_BIN\"|" "$SCRIPT_DIR/replay.sh"
 
 # 3. Modell bestimmen und herunterladen
 MODEL_NAME="de_DE-thorsten-high"
@@ -150,9 +151,11 @@ else
   ok "Modell heruntergeladen"
 fi
 
-# 4. speak.sh ausführbar machen
+# 4. speak.sh und replay.sh ausführbar machen
 chmod +x "$SCRIPT_DIR/speak.sh"
 ok "speak.sh ausführbar"
+chmod +x "$SCRIPT_DIR/replay.sh"
+ok "replay.sh ausführbar"
 
 # 5. config.json anlegen falls nicht vorhanden
 if [ ! -f "$CONFIG_FILE" ]; then
