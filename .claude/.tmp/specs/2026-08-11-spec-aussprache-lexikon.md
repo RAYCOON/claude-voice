@@ -58,8 +58,10 @@ anhören, brauchen weiterhin eine eigene Zeile.
 | `tts_clean_markdown` | entfernt nur noch Markdown — wie der Name verspricht |
 | `tts_apply_pronunciation` | liest `pronunciation.txt`, wendet die Regeln auf stdin an |
 
-`tts_apply_pronunciation` baut **einen** `sed`-Aufruf mit mehreren
-`-e`-Ausdrücken, keine Pipe aus N Aufrufen. Die Regeldatei wird über
+`tts_apply_pronunciation` baut aus allen Regeln **ein** `sed`-Skript und
+schiebt den Text durch einen einzigen Aufruf, keine Pipe aus N Aufrufen. Die
+Regeln als Skriptdatei zu übergeben statt als `-e`-Argumente erspart eine
+zweite Quoting-Ebene für jede Lautschrift. Die Regeldatei wird über
 `$SCRIPT_DIR` gefunden, dem Muster von `CONFIG` und `LOG` folgend — nie über
 das aktuelle Arbeitsverzeichnis, das beim Hook-Aufruf ein fremdes Projekt ist.
 

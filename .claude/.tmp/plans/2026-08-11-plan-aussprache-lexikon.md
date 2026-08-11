@@ -233,7 +233,8 @@ tts_pronunciation_script() {
   local rules="$1" log="${2:-/dev/null}"
   local line term repl broken
 
-  broken=$(grep -vE '^[[:space:]]*(#|$)' "$rules" | grep -vc '=')
+  # grep -c meldet Exit 1, wenn es nichts zählt — hier ist das der Normalfall
+  broken=$(grep -vE '^[[:space:]]*(#|$)' "$rules" | grep -vc '=' || true)
   if [ "${broken:-0}" -gt 0 ]; then
     echo "$(date): ${broken} Zeile(n) ohne '=' in $rules uebersprungen" >> "$log"
   fi
@@ -877,16 +878,26 @@ Platzhalter ab.
 
 - [ ] **Schritt 4: README ergänzen**
 
-In der Dateiübersicht (um Zeile 105-111) die neuen Zeilen einfügen, im Format
-der bestehenden Tabelle:
+Vier Stellen, alle im Abschnitt „Aufbau" und darunter.
+
+`README.md:108` beschreibt `tts.sh` noch ohne das Lexikon — Zeile ersetzen:
 
 ```markdown
-| `pronunciation.txt` | Aussprache-Regeln: `Begriff = Lautschrift` |
-| `speakable.sh` | reicht Sprechtext des Sprachmodus durch die Regeln |
-| `pronounce.sh` | spricht Aussprache-Kandidaten zum Vergleich vor |
+| `tts.sh` | Gemeinsame Bausteine: Config, Markdown-Bereinigung, Aussprache, Synthese, Wiedergabe |
 ```
 
-Den Tests-Abschnitt (Zeile 113-118) erweitern:
+`README.md:110-111` erweitern und die neuen Dateien ergänzen, sodass die
+Tabelle ab Zeile 110 so endet:
+
+```markdown
+| `commands/` | Die Commands selbst (`/sprich`, `/read-msg`, `/aussprache`) |
+| `pronunciation.txt` | Aussprache-Regeln: `Begriff = Lautschrift` |
+| `speakable.sh` | Reicht den Sprechtext des Sprachmodus durch die Regeln |
+| `pronounce.sh` | Spricht Aussprache-Kandidaten zum Vergleich vor |
+| `tests/` | Prüfscripte für Marker-Protokoll, Ausrollen und Aussprache |
+```
+
+Den Codeblock im Tests-Abschnitt (`README.md:115-118`) ersetzen:
 
 ````markdown
 ```bash
@@ -896,6 +907,15 @@ Den Tests-Abschnitt (Zeile 113-118) erweitern:
 ./tests/test-pronounce.sh      # Vorsprechen der Kandidaten
 ```
 ````
+
+`README.md:120` beginnt mit „Beide arbeiten in temporären Verzeichnissen" —
+bei vier Skripten stimmt das nicht mehr. Satzanfang ersetzen durch:
+
+```markdown
+Alle vier arbeiten in temporären Verzeichnissen
+```
+
+(Rest des Satzes unverändert lassen.)
 
 Und einen eigenen Abschnitt vor „## Tests" einfügen:
 
