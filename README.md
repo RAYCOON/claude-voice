@@ -105,16 +105,40 @@ curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thors
 |-------|-------|
 | `speak.sh` | Stop-Hook: liest die letzte Antwort vor |
 | `replay.sh` | Wiederholt die letzte Antwort (`/read-msg`) |
-| `tts.sh` | Gemeinsame Bausteine: Config, Markdown-Bereinigung, Synthese, Wiedergabe |
+| `tts.sh` | Gemeinsame Bausteine: Config, Markdown-Bereinigung, Aussprache, Synthese, Wiedergabe |
 | `commands.sh` | Rollt die Slash-Commands aus und wieder ab |
-| `commands/` | Die Commands selbst (`/sprich`, `/read-msg`) |
-| `tests/` | Prüfscripte für das Marker-Protokoll und das Ausrollen |
+| `commands/` | Die Commands selbst (`/sprich`, `/read-msg`, `/aussprache`) |
+| `pronunciation.txt` | Aussprache-Regeln: `Begriff = Lautschrift` |
+| `speakable.sh` | Reicht den Sprechtext des Sprachmodus durch die Regeln |
+| `pronounce.sh` | Spricht Aussprache-Kandidaten zum Vergleich vor |
+| `tests/` | Prüfscripte für Marker-Protokoll, Ausrollen und Aussprache |
+
+## Aussprache
+
+Das Thorsten-Modell liest deutsch und verunstaltet englische Begriffe.
+`pronunciation.txt` hält dagegen:
+
+```
+Claude = Klod
+Slice  = Slaiß
+```
+
+Die Regeln gelten für den Vorlese-Hook wie für den Sprachmodus. Die
+Reihenfolge in der Datei ist bedeutungslos — beim Laden gewinnt der längere
+Begriff, damit `Slices` nicht von der Regel für `Slice` zerlegt wird.
+
+Neue Regeln kommen über `/aussprache <Begriff>`: Claude schlägt Umschriften
+vor, spricht sie zum Vergleich, und trägt die gewählte ein. Im Sprachmodus
+genügt der Hinweis, dass ein Wort falsch klang. Änderungen wirken sofort,
+ohne Neuinstallation.
 
 ## Tests
 
 ```bash
-./tests/test-mute-marker.sh   # Verfall des Stumm-Markers
-./tests/test-commands.sh      # Ausrollen der Slash-Commands
+./tests/test-mute-marker.sh    # Verfall des Stumm-Markers
+./tests/test-commands.sh       # Ausrollen der Slash-Commands
+./tests/test-pronunciation.sh  # Regelanwendung des Lexikons
+./tests/test-pronounce.sh      # Vorsprechen der Kandidaten
 ```
 
-Beide arbeiten in temporären Verzeichnissen und lassen Profil wie laufende Sessions unberührt. `test-mute-marker.sh` schiebt einen curl-Stub in den `PATH`, damit beim Prüfen keine Sprachausgabe anläuft.
+Alle vier arbeiten in temporären Verzeichnissen und lassen Profil wie laufende Sessions unberührt. `test-mute-marker.sh` schiebt einen curl-Stub in den `PATH`, damit beim Prüfen keine Sprachausgabe anläuft.

@@ -5,13 +5,18 @@ bis der Nutzer „Feierabend" sagt oder im Text ausdrücklich etwas anderes will
 einmal gesprochen von dir, einmal vom Stop-Hook aus claude-voice:
 
 ```bash
-touch "/tmp/claude-voice-mute-$(echo -n "$PWD" | md5 -q)"
+touch "/tmp/claude-voice-mute-$(echo -n "$PWD" | md5 -q)" \
+  && {{CLAUDE_VOICE_DIR}}/speakable.sh "<dein Sprechtext>"
 ```
 
-**Denselben Befehl vor jedem `converse`-Aufruf wiederholen.** Der Marker
-verfällt zehn Minuten nach der letzten Auffrischung; dieser Heartbeat hält
-ihn am Leben. Bricht die Session ab, bleibt die Auffrischung aus und der
-Hook findet von allein zurück zu seiner Stimme.
+**Denselben Befehl vor jedem `converse`-Aufruf wiederholen**, und die Ausgabe
+von `speakable.sh` als `message` übergeben statt deines Rohtexts. Zwei Dinge
+hängen daran: Der Marker verfällt zehn Minuten nach der letzten Auffrischung,
+dieser Heartbeat hält ihn am Leben. Und `speakable.sh` setzt die
+Aussprache-Regeln aus `pronunciation.txt` ein, damit die Stimme englische
+Begriffe im Sprachmodus so ausspricht wie im Vorlese-Hook. Bricht die Session
+ab, bleibt die Auffrischung aus und der Hook findet von allein zurück zu
+seiner Stimme.
 
 Bei „Feierabend" wieder aufheben:
 
@@ -44,6 +49,13 @@ Protokoll:
   Text.
 - Whisper transkribiert oft fehlerhaft. Bei unklarem Transkript **nie** eine
   irreversible Aktion ausführen, sondern nachfragen.
+- **Aussprache-Korrekturen mitnehmen.** Weist der Nutzer auf einen falsch
+  gesprochenen Begriff hin („das heißt nicht Sleike, das heißt Slice"), biete
+  von selbst an, die Schreibweise festzuhalten: drei deutsche Umschriften über
+  `converse` vorsprechen, auswählen lassen, als `Begriff = Lautschrift` an
+  `{{CLAUDE_VOICE_DIR}}/pronunciation.txt` anhängen. Nicht committen, nur
+  Bescheid geben. Nie selbst entscheiden, welche Umschrift gewinnt — das hört
+  der Nutzer.
 - Schreibe vor jedem Aufruf `> **ASSISTANT (voicemode):** <Text>` und nach
   einer Antwort `> **USER (voicemode):** <Antwort>` in den Chat, damit das
   Gespräch im Transkript lesbar bleibt.
