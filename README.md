@@ -23,6 +23,7 @@ Das Script:
 - prüft, ob der TTS-Server erreichbar ist (warnt nur — er darf später starten)
 - legt `config.json` an
 - trägt den Stop-Hook ein, wahlweise lokal oder global
+- rollt die Slash-Commands `/sprich` und `/read-msg` aus
 
 Danach **Claude Code neu starten** — ab sofort liest Thorsten jede Antwort vor.
 
@@ -32,7 +33,20 @@ Danach **Claude Code neu starten** — ab sofort liest Thorsten jede Antwort vor
 ./uninstall.sh
 ```
 
-Entfernt den Stop-Hook, Temp-Dateien und auf Nachfrage die Fallback-Modelle. Der TTS-Server selbst bleibt unangetastet — er gehört nicht zu dieser Installation.
+Entfernt den Stop-Hook und Temp-Dateien, auf Nachfrage auch die Slash-Commands und die Fallback-Modelle. Der TTS-Server selbst bleibt unangetastet — er gehört nicht zu dieser Installation.
+
+## Slash-Commands
+
+Zwei Commands liegen in `commands/` und werden bei der Installation ins Profil kopiert — global nach `~/.claude/commands/`, bei einer Projektinstallation nach `.claude/commands/`:
+
+| Command | Zweck |
+|---------|-------|
+| `/sprich` | Wechselt in den gesprochenen Dialog über voicemode |
+| `/read-msg` | Liest die letzte Antwort noch einmal vollständig vor |
+
+Sie gehören ins Repo, weil `/sprich` und `speak.sh` sich über das Marker-Protokoll einig sein müssen; getrennt gepflegt laufen die beiden Hälften auseinander.
+
+Weicht eine bereits installierte Fassung von der Vorlage ab, zeigt `install.sh` den Unterschied und fragt nach. Wird überschrieben, landet die alte Fassung als `.bak` daneben — eigene Anpassungen gehen also nicht verloren. Der Pfad zu `replay.sh` in `/read-msg` wird beim Kopieren aus dem Repo-Verzeichnis eingesetzt.
 
 ## Zusammenspiel mit dem Sprachmodus
 
@@ -45,7 +59,7 @@ touch "/tmp/claude-voice-mute-$(echo -n "$PWD" | md5 -q)"
 rm -f "/tmp/claude-voice-mute-$(echo -n "$PWD" | md5 -q)"
 ```
 
-Der Command `~/.claude/commands/sprich.md` setzt die Markierung beim Eintritt, frischt sie vor jedem Sprech-Zug auf und löscht sie bei „Feierabend". Sie wirkt damit als Heartbeat: Bricht die Session ab, bleibt die Auffrischung aus und die Markierung verfällt zehn Minuten später von selbst — der Hook findet ohne Zutun zurück zu seiner Stimme. Die Frist steht als `MUTE_TTL_MIN` in `speak.sh`.
+Der Command `/sprich` setzt die Markierung beim Eintritt, frischt sie vor jedem Sprech-Zug auf und löscht sie bei „Feierabend". Sie wirkt damit als Heartbeat: Bricht die Session ab, bleibt die Auffrischung aus und die Markierung verfällt zehn Minuten später von selbst — der Hook findet ohne Zutun zurück zu seiner Stimme. Die Frist steht als `MUTE_TTL_MIN` in `speak.sh`.
 
 Die Markierung hängt bewusst am Projektpfad, nicht global: So bleibt ein Projekt im Sprachmodus stumm, während parallele Sessions in anderen Projekten weiter vorlesen.
 
@@ -92,3 +106,15 @@ curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thors
 | `speak.sh` | Stop-Hook: liest die letzte Antwort vor |
 | `replay.sh` | Wiederholt die letzte Antwort (`/read-msg`) |
 | `tts.sh` | Gemeinsame Bausteine: Config, Markdown-Bereinigung, Synthese, Wiedergabe |
+| `commands.sh` | Rollt die Slash-Commands aus und wieder ab |
+| `commands/` | Die Commands selbst (`/sprich`, `/read-msg`) |
+| `tests/` | Prüfscripte für das Marker-Protokoll und das Ausrollen |
+
+## Tests
+
+```bash
+./tests/test-mute-marker.sh   # Verfall des Stumm-Markers
+./tests/test-commands.sh      # Ausrollen der Slash-Commands
+```
+
+Beide arbeiten in temporären Verzeichnissen und lassen Profil wie laufende Sessions unberührt. `test-mute-marker.sh` schiebt einen curl-Stub in den `PATH`, damit beim Prüfen keine Sprachausgabe anläuft.

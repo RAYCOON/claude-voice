@@ -20,6 +20,9 @@ ok()   { echo -e "${GREEN}✓${NC} $*"; }
 warn() { echo -e "${YELLOW}!${NC} $*"; }
 fail() { echo -e "${RED}✗${NC} $*"; exit 1; }
 
+# shellcheck source=commands.sh
+. "$SCRIPT_DIR/commands.sh"
+
 echo ""
 echo -e "${BOLD}Claude Voice Installer${NC}"
 echo "======================"
@@ -47,6 +50,10 @@ case "$INSTALL_CHOICE" in
     ok "Installiere lokal: $SETTINGS_FILE"
     ;;
 esac
+
+# Die Commands folgen der Hook-Wahl: sonst stünde ein lokaler Hook neben
+# global sichtbaren Commands.
+COMMANDS_TARGET="$SETTINGS_DIR/commands"
 
 echo ""
 
@@ -144,6 +151,11 @@ EOF
 
 write_hook "$SETTINGS_FILE"
 
+# 7. Slash-Commands ausrollen
+echo ""
+echo -e "${BOLD}Installiere Slash-Commands...${NC}"
+commands_install "$SCRIPT_DIR/commands" "$COMMANDS_TARGET" "$SCRIPT_DIR"
+
 echo ""
 echo -e "${GREEN}Installation abgeschlossen!${NC}"
 echo ""
@@ -152,6 +164,8 @@ if [ "$INSTALL_MODE" = "global" ]; then
 else
   echo "  Der Hook ist aktiv im Projekt: $(basename "$(pwd)")"
 fi
+echo ""
+echo "  Commands: /sprich (Sprachmodus), /read-msg (letzte Antwort vorlesen)"
 echo ""
 echo "  Nächste Schritte:"
 echo "  1. Claude Code neu starten"
