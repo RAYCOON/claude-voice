@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 # Prüft pronounce.sh — das Vorsprechen von Aussprache-Kandidaten.
 #
-# Ein curl-Stub verhindert, dass beim Prüfen Sprachausgabe anläuft; geprüft
-# wird der Satz, den das Skript ins Log schreibt.
+# Der curl-Stub schaltet nur den TTS-Server aus. Steht auf der Maschine
+# zusätzlich ein echtes Piper samt Modell in models/ bereit (siehe
+# README-Fallback), griffe sonst genau dieser Fallback in tts.sh und spielte
+# hörbar Audio ab — deshalb zusätzlich ein piper-Stub im PATH und ein
+# TTS_MODEL_PATH, der ins Leere zeigt. Geprüft wird der Satz, den das Skript
+# ins Log schreibt.
 
 set -u
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$REPO/speak.log"
 STUB="$(mktemp -d)"
+FAKE_MODEL="$STUB/kein-modell.onnx"
 fails=0
 trap 'rm -rf "$STUB"' EXIT
 
@@ -18,6 +23,12 @@ echo -n "000"
 exit 1
 EOF
 chmod +x "$STUB/curl"
+
+cat > "$STUB/piper" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+chmod +x "$STUB/piper"
 
 check() {
   local name="$1" expected="$2" actual="$3"
@@ -39,26 +50,26 @@ spoken_line() {
 
 echo "Fall 1: drei Kandidaten werden durchnummeriert"
 mark_log
-PATH="$STUB:$PATH" "$REPO/pronounce.sh" "Sleis" "Slaiß" "Sleiß" > /dev/null 2>&1
+PATH="$STUB:$PATH" TTS_MODEL_PATH="$FAKE_MODEL" "$REPO/pronounce.sh" "Sleis" "Slaiß" "Sleiß" > /dev/null 2>&1
 check "Satz aufgebaut" "Erstens: Sleis. Zweitens: Slaiß. Drittens: Sleiß." "$(spoken_line)"
 
 echo
 echo "Fall 2: mehr Kandidaten als Ordnungszahlen"
 mark_log
-PATH="$STUB:$PATH" "$REPO/pronounce.sh" a b c d e f g > /dev/null 2>&1
+PATH="$STUB:$PATH" TTS_MODEL_PATH="$FAKE_MODEL" "$REPO/pronounce.sh" a b c d e f g > /dev/null 2>&1
 check "siebter faellt auf Nummer zurueck" \
   "Erstens: a. Zweitens: b. Drittens: c. Viertens: d. Fünftens: e. Sechstens: f. Nummer 7: g." \
   "$(spoken_line)"
 
 echo
 echo "Fall 3: ohne Kandidaten"
-PATH="$STUB:$PATH" "$REPO/pronounce.sh" > /dev/null 2>&1
+PATH="$STUB:$PATH" TTS_MODEL_PATH="$FAKE_MODEL" "$REPO/pronounce.sh" > /dev/null 2>&1
 check "Exit 1" "1" "$?"
 
 echo
 echo "Fall 4: Kandidaten gehen roh in die Synthese"
 mark_log
-PATH="$STUB:$PATH" "$REPO/pronounce.sh" "Claude" > /dev/null 2>&1
+PATH="$STUB:$PATH" TTS_MODEL_PATH="$FAKE_MODEL" "$REPO/pronounce.sh" "Claude" > /dev/null 2>&1
 check "keine Regel angewandt" "Erstens: Claude." "$(spoken_line)"
 
 echo

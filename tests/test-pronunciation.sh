@@ -113,6 +113,24 @@ printf '' | PRONUNCIATION_FILE="$WORK/gibtsnicht.txt" "$REPO/speakable.sh" > /de
 check "Exit 0 ohne Regeldatei" "0" "$?"
 
 echo
+echo "Fall 9: Regeldatei ohne eine einzige Regel wird geloggt"
+: > "$WORK/leer.txt"
+: > "$WORK/log9.txt"
+out=$(printf '%s' "Text bleibt." | tts_apply_pronunciation "$WORK/leer.txt" "$WORK/log9.txt")
+check "Text unveraendert" "Text bleibt." "$out"
+check "Logzeile geschrieben" "1" "$(grep -c "Keine anwendbare Regel" "$WORK/log9.txt")"
+
+echo
+echo "Fall 10: Zeile mit '=' aber leerem Begriff wird mitgezaehlt und geloggt"
+cat > "$WORK/leerer-begriff.txt" <<'EOF'
+   = Ersatz
+EOF
+: > "$WORK/log10.txt"
+out=$(printf '%s' "Text bleibt." | tts_apply_pronunciation "$WORK/leerer-begriff.txt" "$WORK/log10.txt")
+check "Text unveraendert" "Text bleibt." "$out"
+check "kaputte Zeile gezaehlt" "1" "$(grep -c "ohne gueltigen Begriff" "$WORK/log10.txt")"
+
+echo
 if [ "$fails" -eq 0 ]; then
   echo "Alle Pruefungen bestanden."
 else

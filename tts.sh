@@ -65,12 +65,18 @@ _tts_escape_replace() { printf '%s' "$1" | sed 's|[\\&/]|\\&|g'; }
 # aus einem "Slices" ein "Slaißs", bevor die eigene Regel greifen könnte.
 tts_pronunciation_script() {
   local rules="$1" log="${2:-/dev/null}"
-  local line term repl broken
+  local line term repl broken empty_term
 
   # grep -c meldet Exit 1, wenn es nichts zählt — hier ist das der Normalfall
   broken=$(grep -vE '^[[:space:]]*(#|$)' "$rules" | grep -vc '=' || true)
-  if [ "${broken:-0}" -gt 0 ]; then
-    echo "$(date): ${broken} Zeile(n) ohne '=' in $rules uebersprungen" >> "$log"
+  # Zeilen mit '=', aber leerem Begriff nach dem Trimmen (z.B. "  = Ersatz")
+  # zählen als kaputt mit: das "continue" weiter unten läuft in einer Subshell
+  # der while-Pipe und könnte einen Zähler nicht nach außen durchreichen.
+  empty_term=$(grep -vE '^[[:space:]]*(#|$)' "$rules" | grep '=' \
+    | awk -F'=' '{ t = $1; gsub(/^[ \t]+|[ \t]+$/, "", t); if (t == "") n++ } END { print n + 0 }')
+  broken=$(( ${broken:-0} + ${empty_term:-0} ))
+  if [ "$broken" -gt 0 ]; then
+    echo "$(date): ${broken} Zeile(n) ohne gueltigen Begriff in $rules uebersprungen" >> "$log"
   fi
 
   grep -vE '^[[:space:]]*(#|$)' "$rules" | grep '=' | while IFS= read -r line; do
@@ -103,6 +109,7 @@ tts_apply_pronunciation() {
 
   script="$(tts_pronunciation_script "$rules" "$log")"
   if [ -z "$script" ]; then
+    echo "$(date): Keine anwendbare Regel in $rules, Text bleibt unveraendert" >> "$log"
     printf '%s\n' "$text"
     return 0
   fi

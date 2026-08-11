@@ -97,7 +97,12 @@ if [ -z "$CLEAN_TEXT" ]; then
 fi
 
 # Projektname aus Hook-JSON (cwd-Feld zuverlässiger als $PWD)
+# Eigener Durchlauf durch die Aussprache-Regeln: sonst bliebe ein Projekt wie
+# "keycloak-adapter" im Namen deutsch buchstabiert, während dasselbe Wort im
+# Text daneben schon richtig klingt. FINAL_TEXT selbst läuft NICHT noch einmal
+# durch die Regeln — sonst griffen sie ein zweites Mal und kaskadierten.
 PROJECT_NAME=$(echo "$INPUT" | jq -r '.cwd // ""' | xargs basename)
+PROJECT_NAME=$(printf '%s' "$PROJECT_NAME" | tts_apply_pronunciation "$PRONUNCIATION_FILE" "$LOG")
 FINAL_TEXT="Neues von Projekt ${PROJECT_NAME}. ${CLEAN_TEXT}"
 
 # Session-isolierte Dateipfade

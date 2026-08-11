@@ -6,6 +6,10 @@
 # Die Reihenfolge in dieser Datei ist bedeutungslos: beim Laden gewinnt der
 # längere Begriff, damit "Slices" nicht von der Regel für "Slice" zerlegt wird.
 # Wörter, die sich gebeugt anders anhören, brauchen trotzdem eine eigene Zeile.
+#
+# Die Regeln wirken nacheinander: steckt der Begriff einer Regel in der
+# Ersetzung einer anderen, greift diese danach erneut — beim Anhängen kurz
+# gegen die bestehenden Ersetzungen prüfen.
 
 Claude   = Klod
 Keycloak = Kii klooug

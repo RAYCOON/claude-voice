@@ -21,7 +21,7 @@ cat "{{CLAUDE_VOICE_DIR}}/pronunciation.txt"
    keine englische Schreibweise.
 2. Vorsprechen lassen:
    ```bash
-   {{CLAUDE_VOICE_DIR}}/pronounce.sh "Sleis" "Slaiß" "Sleiß"
+   "{{CLAUDE_VOICE_DIR}}/pronounce.sh" "Sleis" "Slaiß" "Sleiß"
    ```
    Läuft gerade der Sprachmodus, stattdessen die Kandidaten über `converse`
    sprechen — sonst redet die Hörprobe dem Zuhören dazwischen.
@@ -42,9 +42,10 @@ Gibt es einen Treffer, die bestehende Lautschrift zeigen und fragen, bevor sie
 ersetzt wird.
 
 **Nach dem Eintrag nicht committen.** Ein Aussprache-Fund passiert mitten in
-anderer Arbeit; ein Commit landete sonst ungefragt auf einem fremden
-Feature-Branch. Stattdessen sagen, was eingetragen wurde und dass die Änderung
-uncommitted in `pronunciation.txt` liegt.
+anderer Arbeit; ungefragt zu committen unterbräche sie. Die Änderung liegt in
+`pronunciation.txt` im claude-voice-Repo — nicht im Projekt, an dem gerade
+gearbeitet wird. Stattdessen sagen, was eingetragen wurde und dass der Commit
+dort noch aussteht.
 
 Die Regel wirkt sofort — Hook wie Sprachmodus lesen die Datei bei jedem
 Aufruf neu. Eine Neuinstallation ist nicht nötig.
