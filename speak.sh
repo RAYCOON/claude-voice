@@ -8,6 +8,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="$SCRIPT_DIR/config.json"
 LOG="$SCRIPT_DIR/speak.log"
 
+# Wie lange ein Stumm-Marker ohne Auffrischung durch /sprich gilt.
+# Großzügig gegenüber langen Sprech-Zügen, kurz genug, damit ein
+# abgebrochener Sprachmodus die Stimme nicht dauerhaft kostet.
+MUTE_TTL_MIN=10
+
 # shellcheck source=tts.sh
 . "$SCRIPT_DIR/tts.sh"
 
@@ -44,18 +49,18 @@ fi
 
 # Stumm bleiben, solange der Sprachmodus läuft — sonst käme jede Antwort
 # doppelt: einmal von voicemode, einmal von hier. Den Marker setzt /sprich
-# beim Eintritt und löscht ihn bei "Feierabend". Bleibt er nach einem
-# Session-Abbruch liegen, verfällt er über die voicemode-Aktivität.
+# beim Eintritt, frischt ihn vor jedem Sprech-Zug auf und löscht ihn bei
+# "Feierabend". Bleibt er nach einem Session-Abbruch liegen, verfällt er
+# über sein eigenes Alter: der Heartbeat bleibt dann einfach aus.
 if [ -n "$CWD" ]; then
   MUTE_MARKER="/tmp/claude-voice-mute-$(echo -n "$CWD" | md5 -q)"
   if [ -f "$MUTE_MARKER" ]; then
-    EVENTS=$(ls -t "$HOME"/.voicemode/logs/events/*.jsonl 2>/dev/null | head -1)
-    if [ -n "$EVENTS" ] && [ -n "$(find "$EVENTS" -mmin -30 2>/dev/null)" ]; then
+    if [ -n "$(find "$MUTE_MARKER" -mmin -"$MUTE_TTL_MIN" 2>/dev/null)" ]; then
       echo "$(date): Skipped (Sprachmodus aktiv)" >> "$LOG"
       exit 0
     fi
     rm -f "$MUTE_MARKER"
-    echo "$(date): Stumm-Marker verfallen, keine voicemode-Aktivität" >> "$LOG"
+    echo "$(date): Stumm-Marker verfallen (${MUTE_TTL_MIN} min ohne Auffrischung)" >> "$LOG"
   fi
 fi
 

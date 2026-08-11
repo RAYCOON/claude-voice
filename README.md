@@ -45,7 +45,9 @@ touch "/tmp/claude-voice-mute-$(echo -n "$PWD" | md5 -q)"
 rm -f "/tmp/claude-voice-mute-$(echo -n "$PWD" | md5 -q)"
 ```
 
-Der Command `~/.claude/commands/sprich.md` setzt und löscht die Markierung selbst. Bleibt sie nach einem Session-Abbruch liegen, verfällt sie automatisch, sobald voicemode 30 Minuten lang keine Aktivität mehr hatte.
+Der Command `~/.claude/commands/sprich.md` setzt die Markierung beim Eintritt, frischt sie vor jedem Sprech-Zug auf und löscht sie bei „Feierabend". Sie wirkt damit als Heartbeat: Bricht die Session ab, bleibt die Auffrischung aus und die Markierung verfällt zehn Minuten später von selbst — der Hook findet ohne Zutun zurück zu seiner Stimme. Die Frist steht als `MUTE_TTL_MIN` in `speak.sh`.
+
+Die Markierung hängt bewusst am Projektpfad, nicht global: So bleibt ein Projekt im Sprachmodus stumm, während parallele Sessions in anderen Projekten weiter vorlesen.
 
 ## Konfiguration
 
