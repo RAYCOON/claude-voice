@@ -15,6 +15,9 @@ NC='\033[0m'
 ok()   { echo -e "${GREEN}✓${NC} $*"; }
 warn() { echo -e "${YELLOW}!${NC} $*"; }
 
+# shellcheck source=commands.sh
+. "$SCRIPT_DIR/commands.sh"
+
 echo ""
 echo -e "${BOLD}Claude Voice Uninstaller${NC}"
 echo "========================"
@@ -75,24 +78,30 @@ esac
 
 echo ""
 
-# 3. Prerequisites entfernen?
-echo -e "${BOLD}Prerequisites entfernen?${NC}"
-echo ""
-
-# piper-tts
-if python3 -c "import piper" &>/dev/null 2>&1; then
-  read -rp "  piper-tts deinstallieren? [j/N]: " RM_PIPER
-  if [[ "$(echo "$RM_PIPER" | tr '[:upper:]' '[:lower:]')" == "j" ]]; then
-    pip3 uninstall -y piper-tts && ok "piper-tts deinstalliert" || warn "piper-tts Deinstallation fehlgeschlagen"
+# 3. Slash-Commands entfernen?
+# Sicherungen (.bak) bleiben liegen — darin stecken eigene Anpassungen.
+if [ -d "$SCRIPT_DIR/commands" ]; then
+  echo -e "${BOLD}Slash-Commands entfernen?${NC}"
+  echo ""
+  read -rp "  /sprich und /read-msg entfernen? [j/N]: " RM_COMMANDS
+  if [[ "$(echo "$RM_COMMANDS" | tr '[:upper:]' '[:lower:]')" == "j" ]]; then
+    case "$CHOICE" in
+      1) commands_uninstall "$SCRIPT_DIR/commands" "$(pwd)/.claude/commands" ;;
+      2) commands_uninstall "$SCRIPT_DIR/commands" "$HOME/.claude/commands" ;;
+      3) commands_uninstall "$SCRIPT_DIR/commands" "$(pwd)/.claude/commands"
+         commands_uninstall "$SCRIPT_DIR/commands" "$HOME/.claude/commands" ;;
+    esac
   else
-    warn "piper-tts behalten"
+    warn "Commands behalten"
   fi
-else
-  warn "piper-tts nicht installiert — übersprungen"
+  echo ""
 fi
 
-# Modelle
+# 4. Fallback-Modelle entfernen?
+# Der TTS-Server gehört nicht zu dieser Installation und bleibt unangetastet.
 if [ -d "$SCRIPT_DIR/models" ] && [ -n "$(ls -A "$SCRIPT_DIR/models" 2>/dev/null)" ]; then
+  echo -e "${BOLD}Fallback-Modelle entfernen?${NC}"
+  echo ""
   MODELS_SIZE=$(du -sh "$SCRIPT_DIR/models" 2>/dev/null | cut -f1)
   read -rp "  Modelle entfernen ($MODELS_SIZE)? [j/N]: " RM_MODELS
   if [[ "$(echo "$RM_MODELS" | tr '[:upper:]' '[:lower:]')" == "j" ]]; then
@@ -103,16 +112,13 @@ if [ -d "$SCRIPT_DIR/models" ] && [ -n "$(ls -A "$SCRIPT_DIR/models" 2>/dev/null
   fi
 fi
 
-# 4. Temp-Dateien aufräumen
+# 5. Temp-Dateien aufräumen
 echo ""
-rm -f /tmp/claude-voice-*.wav /tmp/claude-voice-*-lastmsg.txt /tmp/claude-voice-*-skip /tmp/claude-voice-*.pid /tmp/claude-voice-cwd-*
+rm -f /tmp/claude-voice-*.wav /tmp/claude-voice-*-lastmsg.txt /tmp/claude-voice-*-skip \
+      /tmp/claude-voice-*.pid /tmp/claude-voice-cwd-* /tmp/claude-voice-mute-*
 ok "Temp-Dateien entfernt"
 rm -f "$SCRIPT_DIR/speak.log" && ok "Log entfernt" || true
 pkill -x afplay 2>/dev/null && ok "Wiedergabe gestoppt" || true
-
-echo ""
-warn "Hinweis: Der globale Command ~/.claude/commands/read-msg.md wurde nicht entfernt."
-warn "         Manuell löschen falls nicht mehr benötigt."
 
 echo ""
 echo -e "${GREEN}Deinstallation abgeschlossen.${NC}"

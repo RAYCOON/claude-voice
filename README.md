@@ -1,12 +1,14 @@
 # Claude Voice
 
-Lässt Claude Code nach jeder Antwort den letzten Absatz vorlesen — via [Piper TTS](https://github.com/OHF-voice/piper1-gpl) mit der deutschen **Thorsten-Stimme** (CC0-Lizenz).
+Lässt Claude Code nach jeder Antwort den letzten Absatz vorlesen — mit der deutschen **Thorsten-Stimme** (CC0-Lizenz).
+
+Gesprochen wird über einen OpenAI-kompatiblen TTS-Endpoint. Standard ist der Thorsten-Server, den eine [voicemode](https://github.com/mbailey/voicemode)-Installation auf Port 8881 mitbringt — dadurch braucht dieses Repo weder ein eigenes Modell noch eine Piper-Installation.
 
 ## Voraussetzungen
 
 - macOS (nutzt `afplay` zur Wiedergabe)
-- Python 3.10+
 - `jq` (`brew install jq`)
+- Ein erreichbarer TTS-Server, z.B. der von voicemode
 
 ## Installation
 
@@ -17,11 +19,11 @@ cd ~/GitRepos/claude-voice
 ```
 
 Das Script:
-- prüft alle Abhängigkeiten
-- installiert `piper-tts` falls nötig
-- lädt das Thorsten-Modell herunter (~100 MB)
+- prüft `jq`, `curl` und `afplay`
+- prüft, ob der TTS-Server erreichbar ist (warnt nur — er darf später starten)
 - legt `config.json` an
-- trägt den Stop-Hook in `.claude/settings.local.json` ein
+- trägt den Stop-Hook ein, wahlweise lokal oder global
+- rollt die Slash-Commands `/sprich` und `/read-msg` aus
 
 Danach **Claude Code neu starten** — ab sofort liest Thorsten jede Antwort vor.
 
@@ -31,10 +33,35 @@ Danach **Claude Code neu starten** — ab sofort liest Thorsten jede Antwort vor
 ./uninstall.sh
 ```
 
-Das Script:
-- entfernt den Stop-Hook aus `.claude/settings.local.json`
-- löscht heruntergeladene Modelle aus `models/`
-- löscht `config.json` und `speak.log`
+Entfernt den Stop-Hook und Temp-Dateien, auf Nachfrage auch die Slash-Commands und die Fallback-Modelle. Der TTS-Server selbst bleibt unangetastet — er gehört nicht zu dieser Installation.
+
+## Slash-Commands
+
+Zwei Commands liegen in `commands/` und werden bei der Installation ins Profil kopiert — global nach `~/.claude/commands/`, bei einer Projektinstallation nach `.claude/commands/`:
+
+| Command | Zweck |
+|---------|-------|
+| `/sprich` | Wechselt in den gesprochenen Dialog über voicemode |
+| `/read-msg` | Liest die letzte Antwort noch einmal vollständig vor |
+
+Sie gehören ins Repo, weil `/sprich` und `speak.sh` sich über das Marker-Protokoll einig sein müssen; getrennt gepflegt laufen die beiden Hälften auseinander.
+
+Weicht eine bereits installierte Fassung von der Vorlage ab, zeigt `install.sh` den Unterschied und fragt nach. Wird überschrieben, landet die alte Fassung als `.bak` daneben — eigene Anpassungen gehen also nicht verloren. Der Pfad zu `replay.sh` in `/read-msg` wird beim Kopieren aus dem Repo-Verzeichnis eingesetzt.
+
+## Zusammenspiel mit dem Sprachmodus
+
+Läuft ein gesprochenes Gespräch über voicemode, würde jede Antwort doppelt kommen: einmal von voicemode, einmal vom Stop-Hook. Deshalb schweigt der Hook, solange eine Stumm-Markierung für das Projekt existiert:
+
+```bash
+# stumm
+touch "/tmp/claude-voice-mute-$(echo -n "$PWD" | md5 -q)"
+# wieder laut
+rm -f "/tmp/claude-voice-mute-$(echo -n "$PWD" | md5 -q)"
+```
+
+Der Command `/sprich` setzt die Markierung beim Eintritt, frischt sie vor jedem Sprech-Zug auf und löscht sie bei „Feierabend". Sie wirkt damit als Heartbeat: Bricht die Session ab, bleibt die Auffrischung aus und die Markierung verfällt zehn Minuten später von selbst — der Hook findet ohne Zutun zurück zu seiner Stimme. Die Frist steht als `MUTE_TTL_MIN` in `speak.sh`.
+
+Die Markierung hängt bewusst am Projektpfad, nicht global: So bleibt ein Projekt im Sprachmodus stumm, während parallele Sessions in anderen Projekten weiter vorlesen.
 
 ## Konfiguration
 
@@ -43,9 +70,10 @@ Einstellungen in `config.json` anpassen:
 ```json
 {
   "speed": 0.8,
-  "volume": 1.0,
-  "model": "de_DE-thorsten-high",
-  "paragraph": "last"
+  "volume": 0.4,
+  "paragraph": "last",
+  "tts_url": "http://127.0.0.1:8881/v1/audio/speech",
+  "voice": "de_DE-thorsten-high"
 }
 ```
 
@@ -53,57 +81,40 @@ Einstellungen in `config.json` anpassen:
 |-----|-------------|-------|
 | `speed` | Sprechgeschwindigkeit | `0.5` (sehr schnell) – `1.0` (normal) – `2.0` (langsam) |
 | `volume` | Lautstärke | `0.5` (leise) – `1.0` (normal) – `2.0` (laut) |
-| `model` | Piper-Modellname (ohne `.onnx`) | Datei muss in `models/` liegen |
 | `paragraph` | Welcher Teil der Antwort | `"last"` (letzter Absatz) oder `"all"` (alles) |
+| `tts_url` | OpenAI-kompatibler TTS-Endpoint | Standard: voicemode auf Port 8881 |
+| `voice` | Stimme des Servers | verfügbare Namen unter `<server>/v1/audio/voices` |
+| `model` | Nur für den Fallback: Piper-Modellname (ohne `.onnx`) | Datei muss in `models/` liegen |
 
 Alle verfügbaren Werte sind in `config.defaults.json` dokumentiert.
 
-## Andere Modelle
+## Fallback ohne Server
 
-Weitere deutsche Stimmen von [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices):
-
-| Modell | Geschlecht | Qualität |
-|--------|-----------|----------|
-| `de_DE-thorsten-high` | männlich | hoch |
-| `de_DE-thorsten-medium` | männlich | mittel |
-| `de_DE-kerstin-low` | weiblich | niedrig |
-
-`.onnx` und `.onnx.json` in `models/` legen, dann `model` in `config.json` anpassen.
-
-## Manuell testen
+Antwortet der TTS-Server nicht, greift `speak.sh` auf ein lokal installiertes `piper` samt Modell in `models/` zurück. Beides ist optional; ohne Fallback bleibt es bei einem Eintrag in `speak.log`.
 
 ```bash
-echo '{"stop_hook_active":false,"session_id":"test","cwd":"/tmp","last_assistant_message":"Hallo, das ist ein Test."}' | ./speak.sh
+pip3 install piper-tts
+mkdir -p models && cd models
+curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx
+curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx.json
 ```
 
-## Session-Isolation
+## Aufbau
 
-Läuft in mehreren Claude-Instanzen gleichzeitig? Kein Problem — jede Session spricht unabhängig. Die `session_id` im Hook-JSON stellt sicher, dass parallele Sessions sich nicht gegenseitig stören.
+| Datei | Zweck |
+|-------|-------|
+| `speak.sh` | Stop-Hook: liest die letzte Antwort vor |
+| `replay.sh` | Wiederholt die letzte Antwort (`/read-msg`) |
+| `tts.sh` | Gemeinsame Bausteine: Config, Markdown-Bereinigung, Synthese, Wiedergabe |
+| `commands.sh` | Rollt die Slash-Commands aus und wieder ab |
+| `commands/` | Die Commands selbst (`/sprich`, `/read-msg`) |
+| `tests/` | Prüfscripte für das Marker-Protokoll und das Ausrollen |
 
-## Troubleshooting
+## Tests
 
-**Kein Ton nach Neustart:**
-- `speak.log` prüfen: `cat speak.log`
-- Modell vorhanden? `ls models/`
-- Script ausführbar? `chmod +x speak.sh`
-
-**Hook wird nicht ausgeführt:**
-- Claude Code neu starten
-- `.claude/settings.local.json` prüfen — muss `Stop`-Hook mit Pfad zu `speak.sh` enthalten
-
-## Dateistruktur
-
+```bash
+./tests/test-mute-marker.sh   # Verfall des Stumm-Markers
+./tests/test-commands.sh      # Ausrollen der Slash-Commands
 ```
-claude-voice/
-├── speak.sh                      # Hook-Script (wird von Claude aufgerufen)
-├── install.sh                    # Einmal ausführen zur Ersteinrichtung
-├── uninstall.sh                  # Deinstallation
-├── .gitignore                    # Git-Ausschlüsse (Modelle, Logs, User-Config)
-├── config.json                   # Eigene Einstellungen (nicht eingecheckt)
-├── config.defaults.json          # Dokumentierte Defaults (nicht bearbeiten)
-├── models/
-│   ├── de_DE-thorsten-high.onnx      # Sprachmodell (~100 MB, nicht eingecheckt)
-│   └── de_DE-thorsten-high.onnx.json # Modell-Metadaten (eingecheckt)
-└── .claude/
-    └── settings.local.json       # Claude Code Hook-Konfiguration (nicht eingecheckt)
-```
+
+Beide arbeiten in temporären Verzeichnissen und lassen Profil wie laufende Sessions unberührt. `test-mute-marker.sh` schiebt einen curl-Stub in den `PATH`, damit beim Prüfen keine Sprachausgabe anläuft.

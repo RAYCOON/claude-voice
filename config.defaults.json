@@ -7,9 +7,15 @@
   "volume": 1.0,
   "_volume_comment": "Lautstärke: 0.1 (sehr leise) bis 2.0 (sehr laut), Standard: 1.0",
 
-  "model": "de_DE-thorsten-high",
-  "_model_comment": "Piper-Modellname (ohne .onnx), Datei muss in models/ liegen",
-
   "paragraph": "last",
-  "_paragraph_comment": "Welcher Absatz vorgelesen wird: 'last' (letzter) oder 'all' (gesamte Antwort)"
+  "_paragraph_comment": "Welcher Absatz vorgelesen wird: 'last' (letzter) oder 'all' (gesamte Antwort)",
+
+  "tts_url": "http://127.0.0.1:8881/v1/audio/speech",
+  "_tts_url_comment": "OpenAI-kompatibler TTS-Endpoint, Standard: der Thorsten-Server der voicemode-Installation",
+
+  "voice": "de_DE-thorsten-high",
+  "_voice_comment": "Stimme des TTS-Servers, verfügbare Namen unter <server>/v1/audio/voices",
+
+  "model": "de_DE-thorsten-high",
+  "_model_comment": "Nur für den Fallback: Piper-Modellname (ohne .onnx) in models/, greift wenn der TTS-Server nicht antwortet"
 }
