@@ -41,7 +41,9 @@ tts_clean_markdown() {
     | tr -s ' ' \
     | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//' \
     | sed 's/Claude/Klod/g' \
-    | sed 's/[Kk]eycloak/Kii klooug/g'
+    | sed 's/[Kk]eycloak/Kii klooug/g' \
+    | sed 's/[Ss]lices/Slaißis/g' \
+    | sed 's/[Ss]lice/Slaiß/g'
 }
 
 # tts_synthesize <text> <wavfile> [logfile]
