@@ -83,7 +83,7 @@ echo ""
 if [ -d "$SCRIPT_DIR/commands" ]; then
   echo -e "${BOLD}Slash-Commands entfernen?${NC}"
   echo ""
-  read -rp "  /sprich und /read-msg entfernen? [j/N]: " RM_COMMANDS
+  read -rp "  /sprich, /read-msg und /aussprache entfernen? [j/N]: " RM_COMMANDS
   if [[ "$(echo "$RM_COMMANDS" | tr '[:upper:]' '[:lower:]')" == "j" ]]; then
     case "$CHOICE" in
       1) commands_uninstall "$SCRIPT_DIR/commands" "$(pwd)/.claude/commands" ;;

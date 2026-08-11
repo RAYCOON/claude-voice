@@ -98,8 +98,8 @@ fi
 
 # 4. Scripte ausführbar machen
 echo ""
-chmod +x "$SCRIPT_DIR/speak.sh" "$SCRIPT_DIR/replay.sh"
-ok "speak.sh und replay.sh ausführbar"
+chmod +x "$SCRIPT_DIR/speak.sh" "$SCRIPT_DIR/replay.sh" "$SCRIPT_DIR/speakable.sh" "$SCRIPT_DIR/pronounce.sh"
+ok "speak.sh, replay.sh, speakable.sh und pronounce.sh ausführbar"
 
 # 5. config.json anlegen falls nicht vorhanden
 if [ ! -f "$CONFIG_FILE" ]; then
@@ -165,7 +165,7 @@ else
   echo "  Der Hook ist aktiv im Projekt: $(basename "$(pwd)")"
 fi
 echo ""
-echo "  Commands: /sprich (Sprachmodus), /read-msg (letzte Antwort vorlesen)"
+echo "  Commands: /sprich (Sprachmodus), /read-msg (letzte Antwort vorlesen), /aussprache (Aussprache-Lexikon pflegen)"
 echo ""
 echo "  Nächste Schritte:"
 echo "  1. Claude Code neu starten"

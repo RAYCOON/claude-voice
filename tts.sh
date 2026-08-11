@@ -5,6 +5,12 @@
 TTS_DEFAULT_URL="http://127.0.0.1:8881/v1/audio/speech"
 TTS_DEFAULT_VOICE="de_DE-thorsten-high"
 
+# Die Regeldatei liegt neben tts.sh, nicht im Arbeitsverzeichnis — beim
+# Hook-Aufruf ist das cwd ein fremdes Projekt. Eine von außen gesetzte
+# Variable gewinnt, damit Tests gegen eigene Regeldateien laufen können.
+TTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PRONUNCIATION_FILE="${PRONUNCIATION_FILE:-$TTS_DIR/pronunciation.txt}"
+
 # tts_load_config <config.json>
 # Setzt SPEED, VOLUME, PARAGRAPH, TTS_URL, VOICE, MODEL_NAME
 tts_load_config() {
@@ -28,6 +34,9 @@ tts_load_config() {
 
 # tts_clean_markdown — liest stdin, schreibt sprechbaren Text nach stdout
 # Code-Blöcke fliegen raus, Inline-Code behält seinen Inhalt.
+# Aussprache-Regeln gehören nicht hierher, dafür gibt es
+# tts_apply_pronunciation — sonst schleppt der Sprachmodus die
+# Markdown-Bereinigung mit, die er nicht braucht.
 tts_clean_markdown() {
   sed -E 's/```[^`]*```//g' \
     | sed -E 's/`([^`]*)`/\1/g' \
@@ -39,9 +48,83 @@ tts_clean_markdown() {
     | sed -E 's/^[[:space:]]*[-*+][[:space:]]*//' \
     | sed -E 's/^[[:space:]]*[0-9]+\.[[:space:]]*//' \
     | tr -s ' ' \
-    | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//' \
-    | sed 's/Claude/Klod/g' \
-    | sed 's/[Kk]eycloak/Kii klooug/g'
+    | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//'
+}
+
+# _tts_escape_search / _tts_escape_replace
+# Maskieren die Sonderzeichen, die sed in Muster und Ersetzung anders liest
+# als gemeint. Ohne das zerlegt eine harmlose Regel wie "AT&T = Ah tee und tee"
+# den Ausdruck, in dem sie landet: & fügt den gematchten Text ein, / beendet
+# den Ausdruck vorzeitig, . und * machen aus dem Begriff ein Muster.
+_tts_escape_search()  { printf '%s' "$1" | sed 's|[][\.*^$/]|\\&|g'; }
+_tts_escape_replace() { printf '%s' "$1" | sed 's|[\\&/]|\\&|g'; }
+
+# tts_pronunciation_script <regeldatei> [logfile]
+# Baut aus der Regeldatei ein sed-Skript, eine s///g-Zeile je Regel.
+# Sortiert nach Begriffslänge absteigend: sonst machte die Regel für "Slice"
+# aus einem "Slices" ein "Slaißs", bevor die eigene Regel greifen könnte.
+tts_pronunciation_script() {
+  local rules="$1" log="${2:-/dev/null}"
+  local line term repl broken empty_term
+
+  # grep -c meldet Exit 1, wenn es nichts zählt — hier ist das der Normalfall
+  broken=$(grep -vE '^[[:space:]]*(#|$)' "$rules" | grep -vc '=' || true)
+  # Zeilen mit '=', aber leerem Begriff nach dem Trimmen (z.B. "  = Ersatz")
+  # zählen als kaputt mit: das "continue" weiter unten läuft in einer Subshell
+  # der while-Pipe und könnte einen Zähler nicht nach außen durchreichen.
+  empty_term=$(grep -vE '^[[:space:]]*(#|$)' "$rules" | grep '=' \
+    | awk -F'=' '{ t = $1; gsub(/^[ \t]+|[ \t]+$/, "", t); if (t == "") n++ } END { print n + 0 }')
+  broken=$(( ${broken:-0} + ${empty_term:-0} ))
+  if [ "$broken" -gt 0 ]; then
+    echo "$(date): ${broken} Zeile(n) ohne gueltigen Begriff in $rules uebersprungen" >> "$log"
+  fi
+
+  grep -vE '^[[:space:]]*(#|$)' "$rules" | grep '=' | while IFS= read -r line; do
+    term="${line%%=*}"
+    repl="${line#*=}"
+    term="$(printf '%s' "$term" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
+    repl="$(printf '%s' "$repl" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
+    [ -n "$term" ] || continue
+    printf '%d\t%s\t%s\n' "${#term}" "$term" "$repl"
+  done | sort -rn -k1,1 | while IFS="$(printf '\t')" read -r _ term repl; do
+    printf 's/%s/%s/g\n' "$(_tts_escape_search "$term")" "$(_tts_escape_replace "$repl")"
+  done
+}
+
+# tts_apply_pronunciation [regeldatei] [logfile]
+# Liest stdin, schreibt den Text mit angewandten Aussprache-Regeln nach stdout.
+# Fehlt die Datei, enthält sie keine Regel oder scheitert sed, kommt der Text
+# unverändert durch: das Lexikon darf die Stimme nie kosten. Immer Exit 0.
+tts_apply_pronunciation() {
+  local rules="${1:-${PRONUNCIATION_FILE:-}}" log="${2:-/dev/null}"
+  local text script out
+
+  text="$(cat)"
+
+  if [ -z "$rules" ] || [ ! -f "$rules" ]; then
+    echo "$(date): Keine Aussprache-Regeln unter '${rules:-<nicht gesetzt>}'" >> "$log"
+    printf '%s\n' "$text"
+    return 0
+  fi
+
+  script="$(tts_pronunciation_script "$rules" "$log")"
+  if [ -z "$script" ]; then
+    echo "$(date): Keine anwendbare Regel in $rules, Text bleibt unveraendert" >> "$log"
+    printf '%s\n' "$text"
+    return 0
+  fi
+
+  out="$(printf '%s\n' "$text" | sed -f <(printf '%s\n' "$script") 2>> "$log")"
+
+  # Ein leerer Rückgabewert bei nicht-leerer Eingabe heißt: sed ist gestolpert.
+  if [ -z "$out" ] && [ -n "$text" ]; then
+    echo "$(date): Aussprache-Regeln lieferten leeren Text, Original bleibt" >> "$log"
+    printf '%s\n' "$text"
+    return 0
+  fi
+
+  printf '%s\n' "$out"
+  return 0
 }
 
 # tts_synthesize <text> <wavfile> [logfile]

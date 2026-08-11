@@ -5,7 +5,11 @@
 #   seit MUTE_TTL_MIN nicht aufgefrischt -> Hook spricht, Marker wird geräumt
 #
 # Der Test benutzt ein eigenes cwd, damit die Marker echter Projekte unberührt
-# bleiben, und einen curl-Stub, damit keine Sprachausgabe anläuft.
+# bleiben. Der curl-Stub schaltet nur den TTS-Server aus; steht auf der
+# Maschine zusätzlich ein echtes Piper samt Modell in models/ bereit (siehe
+# README-Fallback), griffe sonst genau dieser Fallback in tts.sh und spielte
+# hörbar Audio ab — deshalb zusätzlich ein piper-Stub im PATH und ein
+# TTS_MODEL_PATH, der ins Leere zeigt.
 
 set -u
 
@@ -15,6 +19,7 @@ TEST_CWD="/tmp/claude-voice-testprojekt"
 TEST_SESSION="mute-marker-test"
 MARKER="/tmp/claude-voice-mute-$(echo -n "$TEST_CWD" | md5 -q)"
 STUB="$(mktemp -d)"
+FAKE_MODEL="$STUB/kein-modell.onnx"
 fails=0
 
 cat > "$STUB/curl" <<'EOF'
@@ -23,6 +28,12 @@ echo -n "000"
 exit 1
 EOF
 chmod +x "$STUB/curl"
+
+cat > "$STUB/piper" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+chmod +x "$STUB/piper"
 
 cleanup() {
   rm -rf "$STUB"
@@ -42,7 +53,8 @@ log_since_mark() {
 
 run_hook() {
   printf '{"session_id":"%s","cwd":"%s","stop_hook_active":false,"last_assistant_message":"Test."}' \
-    "$TEST_SESSION" "$TEST_CWD" | PATH="$STUB:$PATH" "$REPO/speak.sh" > /dev/null 2>&1
+    "$TEST_SESSION" "$TEST_CWD" \
+    | PATH="$STUB:$PATH" TTS_MODEL_PATH="$FAKE_MODEL" "$REPO/speak.sh" > /dev/null 2>&1
 }
 
 check() {
