@@ -1,0 +1,16 @@
+# claude-voice — Aussprache
+#
+# Format: Begriff = Lautschrift, eine Regel pro Zeile.
+# Zeilen mit # und Leerzeilen werden ignoriert.
+#
+# Die Reihenfolge in dieser Datei ist bedeutungslos: beim Laden gewinnt der
+# längere Begriff, damit "Slices" nicht von der Regel für "Slice" zerlegt wird.
+# Wörter, die sich gebeugt anders anhören, brauchen trotzdem eine eigene Zeile.
+
+Claude   = Klod
+Keycloak = Kii klooug
+keycloak = Kii klooug
+Slices   = Slaißis
+slices   = Slaißis
+Slice    = Slaiß
+slice    = Slaiß
