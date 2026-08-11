@@ -73,7 +73,7 @@ if [ -d "$REPO/commands" ]; then
   leftover=$(grep -rl "CLAUDE_VOICE_DIR" "$DST" 2>/dev/null | wc -l | tr -d ' ')
   check "keine Platzhalter uebrig" "0" "$leftover"
   installed=$(find "$DST" -name '*.md' | wc -l | tr -d ' ')
-  check "beide Commands installiert" "2" "$installed"
+  check "alle Commands installiert" "3" "$installed"
 else
   echo "  FAIL: $REPO/commands fehlt"
   fails=$((fails + 1))
