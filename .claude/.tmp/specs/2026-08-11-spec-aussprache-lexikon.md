@@ -196,7 +196,9 @@ Skript.
 
 Nicht Teil dieser Arbeit:
 
-- Automatische Kandidatengenerierung ohne Rückfrage. Welche Schreibweise
+- Eintragen ohne Hörprobe und Zustimmung. Regeln **im Gespräch** aufzunehmen
+  ist ausdrücklich Teil dieser Arbeit (siehe `commands/sprich.md`); was nicht
+  dazugehört, ist die Schreibweise eigenmächtig festzulegen. Welche Umschrift
   richtig klingt, entscheidet das Ohr des Nutzers, nicht eine Heuristik.
 - Phonem-Ersetzung über eine Lautschrift wie IPA. Piper nimmt Text; die
   Umschrift in deutscher Rechtschreibung ist das, was funktioniert.
