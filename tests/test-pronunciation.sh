@@ -96,6 +96,23 @@ check "Begriff bleibt stehen" "Claude und Slice" \
   "$(printf '%s' '**Claude** und `Slice`' | tts_clean_markdown)"
 
 echo
+echo "Fall 8: speakable.sh"
+out=$(PRONUNCIATION_FILE="$WORK/simple.txt" "$REPO/speakable.sh" "Claude hilft.")
+check "Argument wird ersetzt" "Klod hilft." "$out"
+
+out=$(printf '%s' "Claude hilft." | PRONUNCIATION_FILE="$WORK/simple.txt" "$REPO/speakable.sh")
+check "stdin wird ersetzt" "Klod hilft." "$out"
+
+PRONUNCIATION_FILE="$WORK/simple.txt" "$REPO/speakable.sh" "Claude hilft." > /dev/null
+check "Exit 0 bei Text" "0" "$?"
+
+printf '' | PRONUNCIATION_FILE="$WORK/simple.txt" "$REPO/speakable.sh" > /dev/null
+check "Exit 0 bei leerer Eingabe" "0" "$?"
+
+printf '' | PRONUNCIATION_FILE="$WORK/gibtsnicht.txt" "$REPO/speakable.sh" > /dev/null
+check "Exit 0 ohne Regeldatei" "0" "$?"
+
+echo
 if [ "$fails" -eq 0 ]; then
   echo "Alle Pruefungen bestanden."
 else
