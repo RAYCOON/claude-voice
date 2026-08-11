@@ -43,7 +43,7 @@ fi
 tts_load_config "$CONFIG"
 TTS_MODEL_PATH="$SCRIPT_DIR/models/${MODEL_NAME}.onnx"
 
-CLEAN_TEXT=$(echo "$MESSAGE" | tts_clean_markdown)
+CLEAN_TEXT=$(echo "$MESSAGE" | tts_clean_markdown | tts_apply_pronunciation "$PRONUNCIATION_FILE" "$LOG")
 
 if [ -z "$CLEAN_TEXT" ]; then
   echo "Nach Bereinigung kein Text übrig."

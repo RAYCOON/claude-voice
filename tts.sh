@@ -34,6 +34,9 @@ tts_load_config() {
 
 # tts_clean_markdown — liest stdin, schreibt sprechbaren Text nach stdout
 # Code-Blöcke fliegen raus, Inline-Code behält seinen Inhalt.
+# Aussprache-Regeln gehören nicht hierher, dafür gibt es
+# tts_apply_pronunciation — sonst schleppt der Sprachmodus die
+# Markdown-Bereinigung mit, die er nicht braucht.
 tts_clean_markdown() {
   sed -E 's/```[^`]*```//g' \
     | sed -E 's/`([^`]*)`/\1/g' \
@@ -45,11 +48,7 @@ tts_clean_markdown() {
     | sed -E 's/^[[:space:]]*[-*+][[:space:]]*//' \
     | sed -E 's/^[[:space:]]*[0-9]+\.[[:space:]]*//' \
     | tr -s ' ' \
-    | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//' \
-    | sed 's/Claude/Klod/g' \
-    | sed 's/[Kk]eycloak/Kii klooug/g' \
-    | sed 's/[Ss]lices/Slaißis/g' \
-    | sed 's/[Ss]lice/Slaiß/g'
+    | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
 # _tts_escape_search / _tts_escape_replace

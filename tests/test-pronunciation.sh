@@ -91,6 +91,11 @@ check "Text unveraendert" "Claude bleibt." "$(cat "$WORK/out.txt")"
 check "Exit 0"            "0"              "$rc"
 
 echo
+echo "Fall 7: tts_clean_markdown raeumt nur Markdown ab, ersetzt keine Begriffe"
+check "Begriff bleibt stehen" "Claude und Slice" \
+  "$(printf '%s' '**Claude** und `Slice`' | tts_clean_markdown)"
+
+echo
 if [ "$fails" -eq 0 ]; then
   echo "Alle Pruefungen bestanden."
 else

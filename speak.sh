@@ -90,7 +90,7 @@ if [ -z "$SPEAK_TEXT" ]; then
   exit 0
 fi
 
-CLEAN_TEXT=$(echo "$SPEAK_TEXT" | tts_clean_markdown)
+CLEAN_TEXT=$(echo "$SPEAK_TEXT" | tts_clean_markdown | tts_apply_pronunciation "$PRONUNCIATION_FILE" "$LOG")
 
 if [ -z "$CLEAN_TEXT" ]; then
   exit 0
