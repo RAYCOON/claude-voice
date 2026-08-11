@@ -75,24 +75,11 @@ esac
 
 echo ""
 
-# 3. Prerequisites entfernen?
-echo -e "${BOLD}Prerequisites entfernen?${NC}"
-echo ""
-
-# piper-tts
-if python3 -c "import piper" &>/dev/null 2>&1; then
-  read -rp "  piper-tts deinstallieren? [j/N]: " RM_PIPER
-  if [[ "$(echo "$RM_PIPER" | tr '[:upper:]' '[:lower:]')" == "j" ]]; then
-    pip3 uninstall -y piper-tts && ok "piper-tts deinstalliert" || warn "piper-tts Deinstallation fehlgeschlagen"
-  else
-    warn "piper-tts behalten"
-  fi
-else
-  warn "piper-tts nicht installiert — übersprungen"
-fi
-
-# Modelle
+# 3. Fallback-Modelle entfernen?
+# Der TTS-Server gehört nicht zu dieser Installation und bleibt unangetastet.
 if [ -d "$SCRIPT_DIR/models" ] && [ -n "$(ls -A "$SCRIPT_DIR/models" 2>/dev/null)" ]; then
+  echo -e "${BOLD}Fallback-Modelle entfernen?${NC}"
+  echo ""
   MODELS_SIZE=$(du -sh "$SCRIPT_DIR/models" 2>/dev/null | cut -f1)
   read -rp "  Modelle entfernen ($MODELS_SIZE)? [j/N]: " RM_MODELS
   if [[ "$(echo "$RM_MODELS" | tr '[:upper:]' '[:lower:]')" == "j" ]]; then
@@ -105,14 +92,15 @@ fi
 
 # 4. Temp-Dateien aufräumen
 echo ""
-rm -f /tmp/claude-voice-*.wav /tmp/claude-voice-*-lastmsg.txt /tmp/claude-voice-*-skip /tmp/claude-voice-*.pid /tmp/claude-voice-cwd-*
+rm -f /tmp/claude-voice-*.wav /tmp/claude-voice-*-lastmsg.txt /tmp/claude-voice-*-skip \
+      /tmp/claude-voice-*.pid /tmp/claude-voice-cwd-* /tmp/claude-voice-mute-*
 ok "Temp-Dateien entfernt"
 rm -f "$SCRIPT_DIR/speak.log" && ok "Log entfernt" || true
 pkill -x afplay 2>/dev/null && ok "Wiedergabe gestoppt" || true
 
 echo ""
-warn "Hinweis: Der globale Command ~/.claude/commands/read-msg.md wurde nicht entfernt."
-warn "         Manuell löschen falls nicht mehr benötigt."
+warn "Hinweis: Die globalen Commands ~/.claude/commands/read-msg.md und sprich.md"
+warn "         wurden nicht entfernt. Manuell löschen falls nicht mehr benötigt."
 
 echo ""
 echo -e "${GREEN}Deinstallation abgeschlossen.${NC}"
