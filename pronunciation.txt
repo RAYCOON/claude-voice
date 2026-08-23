@@ -18,3 +18,7 @@ Slices   = Slaißis
 slices   = Slaißis
 Slice    = Slaiß
 slice    = Slaiß
+Templates = Templäjts
+templates = Templäjts
+Template  = Templäjt
+template  = Templäjt
