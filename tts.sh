@@ -34,6 +34,9 @@ tts_load_config() {
 
 # tts_clean_markdown — liest stdin, schreibt sprechbaren Text nach stdout
 # Code-Blöcke fliegen raus, Inline-Code behält seinen Inhalt.
+# Listen-Items ohne Satzzeichen enden als Satz (Punkt angehängt): sonst liest
+# Piper eine Aufzählung als atemlosen Fließtext ohne Pausen durch — gemessen
+# ~24 statt ~18 Zeichen/s, und genau das macht Listen unverständlich.
 # Aussprache-Regeln gehören nicht hierher, dafür gibt es
 # tts_apply_pronunciation — sonst schleppt der Sprachmodus die
 # Markdown-Bereinigung mit, die er nicht braucht.
@@ -45,7 +48,9 @@ tts_clean_markdown() {
     | sed -E 's/^#{1,6}[[:space:]]*//' \
     | sed -E 's/\[([^]]*)\]\([^)]*\)/\1/g' \
     | sed -E 's/!\[([^]]*)\]\([^)]*\)//' \
+    | sed -E 's/^[[:space:]]*[-*+][[:space:]]+(.*[^.!?:;[:space:]])[[:space:]]*$/\1./' \
     | sed -E 's/^[[:space:]]*[-*+][[:space:]]*//' \
+    | sed -E 's/^[[:space:]]*[0-9]+\.[[:space:]]+(.*[^.!?:;[:space:]])[[:space:]]*$/\1./' \
     | sed -E 's/^[[:space:]]*[0-9]+\.[[:space:]]*//' \
     | tr -s ' ' \
     | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//'
