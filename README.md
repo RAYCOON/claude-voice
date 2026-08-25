@@ -73,6 +73,7 @@ Einstellungen in `config.json` anpassen:
   "speed": 0.8,
   "volume": 0.4,
   "paragraph": "last",
+  "skip_sections": ["Nächste.*Schritte", "Next steps"],
   "tts_url": "http://127.0.0.1:8881/v1/audio/speech",
   "voice": "de_DE-thorsten-high"
 }
@@ -83,11 +84,14 @@ Einstellungen in `config.json` anpassen:
 | `speed` | Sprechgeschwindigkeit | `0.5` (sehr schnell) – `1.0` (normal) – `2.0` (langsam) |
 | `volume` | Lautstärke | `0.5` (leise) – `1.0` (normal) – `2.0` (laut) |
 | `paragraph` | Welcher Teil der Antwort | `"last"` (letzter Absatz) oder `"all"` (alles) |
+| `skip_sections` | Überschriften-Muster (ERE), ab denen der Rest der Antwort abgeschnitten wird | Standard: `["Nächste.*Schritte", "Next steps"]`, `[]` schaltet den Schnitt ab |
 | `tts_url` | OpenAI-kompatibler TTS-Endpoint | Standard: voicemode auf Port 8881 |
 | `voice` | Stimme des Servers | verfügbare Namen unter `<server>/v1/audio/voices` |
 | `model` | Nur für den Fallback: Piper-Modellname (ohne `.onnx`) | Datei muss in `models/` liegen |
 
 Alle verfügbaren Werte sind in `config.defaults.json` dokumentiert.
+
+Antworten enden oft mit einem Block wie „Nächste sinnvolle Schritte" voller Vorschlagsprompts für den nächsten Turn — der Hook schneidet ab der letzten Zeile, die (nach Abzug von Markdown-Dekoration wie `#`, `**` oder Emoji) einem der `skip_sections`-Muster entspricht, bis zum Ende der Antwort ab und liest stattdessen den letzten Absatz des Rests vor. Besteht die ganze Antwort nur aus diesem Fussbereich, bleibt es beim ungekürzten Text — die Stimme darf dadurch nie ganz verstummen. `/read-msg` liest unabhängig davon immer die vollständige, ungekürzte Antwort vor.
 
 ## Fallback ohne Server
 
@@ -136,10 +140,12 @@ ohne Neuinstallation.
 ## Tests
 
 ```bash
-./tests/test-mute-marker.sh    # Verfall des Stumm-Markers
-./tests/test-commands.sh       # Ausrollen der Slash-Commands
-./tests/test-pronunciation.sh  # Regelanwendung des Lexikons
-./tests/test-pronounce.sh      # Vorsprechen der Kandidaten
+./tests/test-mute-marker.sh     # Verfall des Stumm-Markers
+./tests/test-commands.sh        # Ausrollen der Slash-Commands
+./tests/test-pronunciation.sh   # Regelanwendung des Lexikons
+./tests/test-pronounce.sh       # Vorsprechen der Kandidaten
+./tests/test-clean-markdown.sh  # Markdown → Sprechtext
+./tests/test-strip-sections.sh  # Fussbereich ("Nächste Schritte") abschneiden
 ```
 
-Alle vier arbeiten in temporären Verzeichnissen und lassen das Profil unberührt. `test-pronounce.sh` und `test-mute-marker.sh` hängen dabei bewusst an das echte `speak.log` an — eine gitignorierte Laufzeit-Datei — um zu prüfen, was die Skripte dort protokollieren, und schieben dafür curl- und piper-Stubs in den `PATH`, damit beim Prüfen keine Sprachausgabe anläuft.
+Alle arbeiten in temporären Verzeichnissen und lassen das Profil unberührt. `test-pronounce.sh`, `test-mute-marker.sh` und `test-strip-sections.sh` hängen dabei bewusst an das echte `speak.log` an — eine gitignorierte Laufzeit-Datei — um zu prüfen, was die Skripte dort protokollieren, und schieben dafür curl- und piper-Stubs in den `PATH`, damit beim Prüfen keine Sprachausgabe anläuft.

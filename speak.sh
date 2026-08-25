@@ -71,8 +71,28 @@ if [ -z "$MESSAGE" ]; then
   exit 0
 fi
 
-# Volle Nachricht für /read-msg persistieren
+# Volle Nachricht für /read-msg persistieren — UNGEKUERZT: replay.sh liest
+# bewusst die ganze Antwort noch einmal vor, auch den Fussbereich, den der
+# Hook selbst gleich abschneidet.
 echo "$MESSAGE" > "/tmp/claude-voice-${SESSION_ID}-lastmsg.txt"
+
+# Fussbereich mit Vorschlagsprompts ("Nächste Schritte" o.ä.) abschneiden,
+# BEVOR der Absatz gewaehlt wird — sonst waere genau dieser Block der
+# "letzte Absatz" und die eigentliche Antwort bliebe stumm.
+TRIMMED=$(printf '%s\n' "$MESSAGE" | tts_strip_trailing_sections ${SKIP_SECTIONS[@]+"${SKIP_SECTIONS[@]}"})
+
+if [ -n "$(printf '%s' "$TRIMMED" | tr -d '[:space:]')" ]; then
+  if [ "$TRIMMED" != "$MESSAGE" ]; then
+    echo "$(date): Abschnitt ab Ueberschrift abgeschnitten (skip_sections)" >> "$LOG"
+  fi
+  MESSAGE="$TRIMMED"
+else
+  # Die ganze Antwort besteht nur aus dem Fussbereich (z.B. eine reine
+  # Vorschlagsliste ohne eigenen Text davor) — dann lieber ungekuerzt
+  # vorlesen als der Stimme den Mund zu verbieten. Gleiches Prinzip wie beim
+  # Aussprache-Lexikon: der Schnitt darf die Stimme nie ganz kosten.
+  echo "$(date): Nach Abschnitts-Schnitt nichts uebrig, lese ungekuerzt vor" >> "$LOG"
+fi
 
 # Absatz(e) extrahieren
 if [ "$PARAGRAPH" = "all" ]; then

@@ -10,3 +10,5 @@ config.json
 
 # Claude Code lokale Settings
 .claude/settings.local.json
+.env.local
+.devstudio/workspace.json
