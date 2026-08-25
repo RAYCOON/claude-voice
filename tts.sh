@@ -6,8 +6,12 @@ TTS_DEFAULT_URL="http://127.0.0.1:8881/v1/audio/speech"
 TTS_DEFAULT_VOICE="de_DE-thorsten-high"
 # Ueberschriften, ab denen der Vorlese-Hook den Rest der Antwort abschneidet
 # (siehe tts_strip_trailing_sections) — Default, falls config.json den Key
-# skip_sections nicht setzt.
-TTS_DEFAULT_SKIP_SECTIONS=("Nächste.*Schritte" "Next steps")
+# skip_sections nicht setzt. Die Muster decken die Varianten ab, in denen
+# der Fussbereich tatsaechlich erschien ("Nächste sinnvolle Schritte",
+# "Vorschläge für die nächsten Tasks", "5 Prompt-Vorschläge"): fehlt eine
+# Variante, liest der Hook statt der Antwort die komplette Vorschlagsliste
+# vor — beobachtet am 2026-08-25.
+TTS_DEFAULT_SKIP_SECTIONS=("Nächste.*(Schritte|Tasks|Prompts)" "Next steps" "Vorschläge" "([0-9]+ )?Prompt-Vorschläge")
 
 # Die Regeldatei liegt neben tts.sh, nicht im Arbeitsverzeichnis — beim
 # Hook-Aufruf ist das cwd ein fremdes Projekt. Eine von außen gesetzte

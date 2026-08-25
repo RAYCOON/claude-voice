@@ -73,7 +73,7 @@ Einstellungen in `config.json` anpassen:
   "speed": 0.8,
   "volume": 0.4,
   "paragraph": "last",
-  "skip_sections": ["Nächste.*Schritte", "Next steps"],
+  "skip_sections": ["Nächste.*(Schritte|Tasks|Prompts)", "Next steps", "Vorschläge", "([0-9]+ )?Prompt-Vorschläge"],
   "tts_url": "http://127.0.0.1:8881/v1/audio/speech",
   "voice": "de_DE-thorsten-high"
 }
@@ -84,7 +84,7 @@ Einstellungen in `config.json` anpassen:
 | `speed` | Sprechgeschwindigkeit | `0.5` (sehr schnell) – `1.0` (normal) – `2.0` (langsam) |
 | `volume` | Lautstärke | `0.5` (leise) – `1.0` (normal) – `2.0` (laut) |
 | `paragraph` | Welcher Teil der Antwort | `"last"` (letzter Absatz) oder `"all"` (alles) |
-| `skip_sections` | Überschriften-Muster (ERE), ab denen der Rest der Antwort abgeschnitten wird | Standard: `["Nächste.*Schritte", "Next steps"]`, `[]` schaltet den Schnitt ab |
+| `skip_sections` | Überschriften-Muster (ERE), ab denen der Rest der Antwort abgeschnitten wird | Standard: `["Nächste.*(Schritte|Tasks|Prompts)", "Next steps", "Vorschläge", "([0-9]+ )?Prompt-Vorschläge"]` (Zeilenanfang nach Markdown-Dekoration), `[]` schaltet den Schnitt ab |
 | `tts_url` | OpenAI-kompatibler TTS-Endpoint | Standard: voicemode auf Port 8881 |
 | `voice` | Stimme des Servers | verfügbare Namen unter `<server>/v1/audio/voices` |
 | `model` | Nur für den Fallback: Piper-Modellname (ohne `.onnx`) | Datei muss in `models/` liegen |
