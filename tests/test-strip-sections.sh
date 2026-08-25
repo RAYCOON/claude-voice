@@ -27,7 +27,7 @@ check() {
   fi
 }
 
-DEFAULT_PATTERNS=("Nächste.*Schritte" "Next steps")
+DEFAULT_PATTERNS=("Nächste.*(Schritte|Tasks|Prompts)" "Next steps" "Vorschläge" "([0-9]+ )?Prompt-Vorschläge")
 
 # strip <text> [pattern ...]
 strip() {
@@ -81,6 +81,26 @@ IN8=$'Text.\n\n## Nächste Schritte\n\n1. Punkt'
 check "ohne Muster unveraendert" "$IN8" "$(strip "$IN8")"
 
 echo
+echo "Fall 8a: Ueberschrift 'Vorschläge für die nächsten Tasks' (Footer-Variante vom 2026-08-25)"
+IN8A=$'Antwort mit Inhalt.\n\n## Vorschläge für die nächsten Tasks\n\n1. Erstes\n2. Zweites'
+check "Vorschläge-Ueberschrift geschnitten" "Antwort mit Inhalt." "$(strip "$IN8A" "${DEFAULT_PATTERNS[@]}")"
+
+echo
+echo "Fall 8b: fette Ueberschrift '5 Prompt-Vorschläge'"
+IN8B=$'Antwort mit Inhalt.\n\n**5 Prompt-Vorschläge**\n\n1. Erstes\n2. Zweites'
+check "Prompt-Vorschläge geschnitten" "Antwort mit Inhalt." "$(strip "$IN8B" "${DEFAULT_PATTERNS[@]}")"
+
+echo
+echo "Fall 8c: 'Nächste sinnvolle Tasks' statt Schritte"
+IN8C=$'Antwort mit Inhalt.\n\n### Nächste sinnvolle Tasks\n\n- eins'
+check "Nächste-Tasks geschnitten" "Antwort mit Inhalt." "$(strip "$IN8C" "${DEFAULT_PATTERNS[@]}")"
+
+echo
+echo "Fall 8d: 'Vorschläge' mitten im Satz, nicht am Zeilenanfang -> kein Treffer"
+IN8D=$'Absatz eins.\n\nMeine drei Vorschläge stehen oben.\n\nAbsatz zwei.'
+check "Vorschläge im Fliesstext bleibt" "$IN8D" "$(strip "$IN8D" "${DEFAULT_PATTERNS[@]}")"
+
+echo
 echo "Fall 9: tts_load_config laedt skip_sections"
 
 cat > "$WORK/no-key.json" <<'EOF'
@@ -89,9 +109,11 @@ cat > "$WORK/no-key.json" <<'EOF'
 }
 EOF
 tts_load_config "$WORK/no-key.json"
-check "ohne Key: Default-Anzahl" "2" "${#SKIP_SECTIONS[@]}"
-check "ohne Key: Default 1"      "Nächste.*Schritte" "${SKIP_SECTIONS[0]}"
-check "ohne Key: Default 2"      "Next steps"        "${SKIP_SECTIONS[1]}"
+check "ohne Key: Default-Anzahl" "4" "${#SKIP_SECTIONS[@]}"
+check "ohne Key: Default 1"      "Nächste.*(Schritte|Tasks|Prompts)"  "${SKIP_SECTIONS[0]}"
+check "ohne Key: Default 2"      "Next steps"                         "${SKIP_SECTIONS[1]}"
+check "ohne Key: Default 3"      "Vorschläge"                         "${SKIP_SECTIONS[2]}"
+check "ohne Key: Default 4"      "([0-9]+ )?Prompt-Vorschläge"        "${SKIP_SECTIONS[3]}"
 
 cat > "$WORK/empty-list.json" <<'EOF'
 {
@@ -111,9 +133,11 @@ check "eigene Liste: Anzahl" "1"   "${#SKIP_SECTIONS[@]}"
 check "eigene Liste: Wert"   "Foo" "${SKIP_SECTIONS[0]}"
 
 tts_load_config "$WORK/gibtsnicht.json"
-check "ohne Config: Default-Anzahl" "2" "${#SKIP_SECTIONS[@]}"
-check "ohne Config: Default 1"      "Nächste.*Schritte" "${SKIP_SECTIONS[0]}"
-check "ohne Config: Default 2"      "Next steps"        "${SKIP_SECTIONS[1]}"
+check "ohne Config: Default-Anzahl" "4" "${#SKIP_SECTIONS[@]}"
+check "ohne Config: Default 1"      "Nächste.*(Schritte|Tasks|Prompts)"  "${SKIP_SECTIONS[0]}"
+check "ohne Config: Default 2"      "Next steps"                         "${SKIP_SECTIONS[1]}"
+check "ohne Config: Default 3"      "Vorschläge"                         "${SKIP_SECTIONS[2]}"
+check "ohne Config: Default 4"      "([0-9]+ )?Prompt-Vorschläge"        "${SKIP_SECTIONS[3]}"
 
 echo
 echo "Fall 10: Integration ueber speak.sh — Fussbereich faellt weg, lastmsg.txt bleibt vollstaendig"
