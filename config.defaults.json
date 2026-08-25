@@ -10,6 +10,9 @@
   "paragraph": "last",
   "_paragraph_comment": "Welcher Absatz vorgelesen wird: 'last' (letzter) oder 'all' (gesamte Antwort)",
 
+  "skip_sections": ["Nächste.*Schritte", "Next steps"],
+  "_skip_sections_comment": "Abschnitte, die beim Vorlesen wegfallen: Überschriften-Muster (ERE, groß-/kleinschreibungsgenau), ab der letzten passenden Überschrift bis zum Ende. Leere Liste schaltet den Schnitt ab",
+
   "tts_url": "http://127.0.0.1:8881/v1/audio/speech",
   "_tts_url_comment": "OpenAI-kompatibler TTS-Endpoint, Standard: der Thorsten-Server der voicemode-Installation",
 
