@@ -4,7 +4,7 @@
   "speed": 1.0,
   "_speed_comment": "Sprechgeschwindigkeit: 0.5 (sehr schnell) bis 2.0 (sehr langsam), Standard: 1.0",
 
-  "volume": 1.0,
+  "volume": 0.3,
   "_volume_comment": "Lautstärke: 0.1 (sehr leise) bis 2.0 (sehr laut), Standard: 1.0",
 
   "paragraph": "last",
