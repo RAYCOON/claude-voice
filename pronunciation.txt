@@ -33,3 +33,4 @@ review = reviuh
 merge = mördsch
 Merge = Mördsch
 README = Riidmii
+claude = Klod
