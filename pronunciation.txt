@@ -34,3 +34,6 @@ merge = mördsch
 Merge = Mördsch
 README = Riidmii
 claude = Klod
+RAYCOON = Räikuhn
+Raycoon = Räikuhn
+raycoon = Räikuhn
