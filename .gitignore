@@ -12,3 +12,6 @@ config.json
 .claude/settings.local.json
 .env.local
 .devstudio/workspace.json
+
+# Persönliche Claude-Anweisungen
+CLAUDE.local.md
