@@ -37,3 +37,7 @@ claude = Klod
 RAYCOON = Räikuhn
 Raycoon = Räikuhn
 raycoon = Räikuhn
+Branches = Braanschis
+branches = Braanschis
+Branch   = Braansch
+branch   = Braansch
